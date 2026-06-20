@@ -1,6 +1,9 @@
 {
   "appId": "com.example.kbbapp",
-  "appName": "KBB App",
+  "appName": "kbb-app",
   "webDir": "dist",
-  "bundledWebRuntime": false
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
 }

@@ -43,6 +43,7 @@ function App() {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeAlarmTask, setActiveAlarmTask] = useState<Task | null>(null);
     const stopActiveAlarmRef = React.useRef<(() => void) | null>(null);
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
     
     // Core collection states backed by localStorage for offline fast fallback, and updated by real-time Firestore synchronization
     const [clients, setClients] = usePersistentState<Client[]>('kbb_clients', initialClients);
@@ -366,7 +367,6 @@ function App() {
         setCurrentPage('Dashboard');
     };
     
-    // --- PDF Export Logic ---
     const handleExportPDF = (title: string, headers: string[], data: any[][]) => {
         const { jsPDF } = jspdf;
         const doc = new jsPDF();
@@ -401,7 +401,6 @@ function App() {
         handleExportPDF("Dossiers", headers, data);
     };
 
-    // --- Secured Firestore + Live Toast CRUD Handlers ---
     const handleAddClient = async (newClient: Omit<Client, 'id'> & { id?: string | number }) => {
         const nextId = newClient.id || (clients.length > 0 ? Math.max(...clients.map(c => typeof c.id === 'number' ? c.id : 0)) : 0) + 1;
         const { id, ...cleanClient } = newClient;
@@ -409,9 +408,9 @@ function App() {
         setClients(prev => [...prev, record]);
         try {
             await dbCreateDoc('clients', nextId, cleanClient);
-            triggerToast('success', `Client "${newClient.name}" créé avec succès !`);
+            triggerToast('success', `Client "${newClient.name}" créé !`);
         } catch (err) {
-            triggerToast('error', `Échec de l'enregistrement du client "${newClient.name}".`);
+            triggerToast('error', `Échec de l'enregistrement.`);
         }
     };
 
@@ -431,9 +430,9 @@ function App() {
                     await dbCreateDoc('tasks', currentMaxId, cleanTask);
                 }
             }
-            triggerToast('success', `Dossier "${newCase.name}" et tâches complémentaires enregistrés !`);
+            triggerToast('success', `Dossier "${newCase.name}" enregistré !`);
         } catch (err) {
-            triggerToast('error', `Échec de l'écriture du dossier "${newCase.name}".`);
+            triggerToast('error', `Échec de l'écriture du dossier.`);
         }
     };
 
@@ -442,9 +441,9 @@ function App() {
         try {
             const { id, ...cleanEvent } = newEvent;
             await dbCreateDoc('events', id, cleanEvent);
-            triggerToast('success', `Événement "${newEvent.name}" planifié avec succès !`);
+            triggerToast('success', `Événement "${newEvent.name}" planifié !`);
         } catch (err) {
-            triggerToast('error', "Échec de l'enregistrement de l'événement.");
+            triggerToast('error', "Échec de l'enregistrement.");
         }
     };
 
@@ -455,7 +454,7 @@ function App() {
             await dbUpdateDoc('events', id, cleanEvent);
             triggerToast('success', `Événement "${updatedEvent.name}" mis à jour !`);
         } catch (err) {
-            triggerToast('error', "Échec de la mise à jour de l'événement.");
+            triggerToast('error', "Échec de la mise à jour.");
         }
     };
 
@@ -465,7 +464,7 @@ function App() {
         setTasks(prev => [...prev, record]);
         try {
             await dbCreateDoc('tasks', nextId, newTask);
-            triggerToast('success', `Tâche "${newTask.name}" programmée avec succès.`);
+            triggerToast('success', `Tâche "${newTask.name}" programmée.`);
         } catch (err) {
             triggerToast('error', "Impossible d'enregistrer la tâche.");
         }
@@ -477,7 +476,7 @@ function App() {
             await dbUpdateDoc('tasks', id, { status });
             triggerToast('success', `Statut de la tâche mis à jour !`);
         } catch (err) {
-            triggerToast('error', "Échec de modification de la tâche.");
+            triggerToast('error', "Échec de modification.");
         }
     };
 
@@ -486,9 +485,9 @@ function App() {
         try {
             const { id, ...cleanInvoice } = newInvoice;
             await dbCreateDoc('invoices', id, cleanInvoice);
-            triggerToast('success', `Facture "${newInvoice.id}" émise avec succès !`);
+            triggerToast('success', `Facture "${newInvoice.id}" émise !`);
         } catch (err) {
-            triggerToast('error', "Échec de l'émission de la facture.");
+            triggerToast('error', "Échec de l'émission.");
         }
     };
 
@@ -500,7 +499,7 @@ function App() {
             await dbCreateDoc('avocats', id, payload);
             triggerToast('success', `Profil de l'avocat ${newAvocat.fullName} créé !`);
         } catch (err) {
-            triggerToast('error', "Erreur d'enregistrement de l'avocat.");
+            triggerToast('error', "Erreur d'enregistrement.");
         }
     };
 
@@ -509,9 +508,9 @@ function App() {
         try {
             const { id, ...cleanPersonnel } = newPersonnel;
             await dbCreateDoc('personnels', id, cleanPersonnel);
-            triggerToast('success', `Agent administratif "${newPersonnel.fullName}" enregistré !`);
+            triggerToast('success', `Agent "${newPersonnel.fullName}" enregistré !`);
         } catch (err) {
-            triggerToast('error', "Erreur lors de l'inscription du membre du personnel.");
+            triggerToast('error', "Erreur lors de l'inscription.");
         }
     };
 
@@ -522,7 +521,7 @@ function App() {
             await dbCreateDoc('fournisseurs', id, cleanFournisseur);
             triggerToast('success', `Fournisseur "${newFournisseur.nomComplet}" validé !`);
         } catch (err) {
-            triggerToast('error', "Échec de l'enregistrement du fournisseur.");
+            triggerToast('error', "Échec de l'enregistrement.");
         }
     };
 
@@ -533,7 +532,7 @@ function App() {
             await dbDeleteDoc('clients', id);
             triggerToast('success', `Client "${client?.name || id}" révoqué !`);
         } catch (err) {
-            triggerToast('error', "Échec de la suppression du client.");
+            triggerToast('error', "Échec de la suppression.");
         }
     };
 
@@ -543,7 +542,7 @@ function App() {
         setConfirmModal({
             isOpen: true,
             title: 'Supprimer ce client ?',
-            message: `Êtes-vous sûr de vouloir supprimer définitivement le client "${name}" ? Cette action supprimera tous ses enregistrements et est irréversible.`,
+            message: `Êtes-vous sûr de vouloir supprimer "${name}" ?`,
             onConfirm: () => executeDeleteClient(id)
         });
     };
@@ -555,7 +554,7 @@ function App() {
             await dbDeleteDoc('cases', id);
             triggerToast('success', `Dossier "${d?.name || id}" archivé !`);
         } catch (err) {
-            triggerToast('error', "Impossible d'archiver le dossier.");
+            triggerToast('error', "Impossible d'archiver.");
         }
     };
 
@@ -565,7 +564,7 @@ function App() {
         setConfirmModal({
             isOpen: true,
             title: 'Archiver ce dossier ?',
-            message: `Voulez-vous vraiment ranger ou archiver définitivement le dossier "${name}" ?`,
+            message: `Voulez-vous vraiment archiver le dossier "${name}" ?`,
             onConfirm: () => executeDeleteCase(id)
         });
     };
@@ -575,9 +574,9 @@ function App() {
         setAvocats(avocats.filter(a => a.id !== id));
         try {
             await dbDeleteDoc('avocats', id);
-            triggerToast('success', `Départ de l'avocat "${a?.fullName || id}" acté !`);
+            triggerToast('success', `Départ de "${a?.fullName || id}" acté !`);
         } catch (err) {
-            triggerToast('error', "Échec de la désinscription de l'avocat.");
+            triggerToast('error', "Échec de la désinscription.");
         }
     };
 
@@ -586,8 +585,8 @@ function App() {
         const name = avocat?.fullName || id;
         setConfirmModal({
             isOpen: true,
-            title: "Retirer l'avocat du cabinet ?",
-            message: `Êtes-vous sûr de vouloir révoquer l'accès et supprimer la fiche de l'avocat "${name}" ?`,
+            title: "Retirer l'avocat ?",
+            message: `Supprimer la fiche de "${name}" ?`,
             onConfirm: () => executeDeleteAvocat(id)
         });
     };
@@ -597,9 +596,9 @@ function App() {
         setPersonnels(personnels.filter(p => p.id !== id));
         try {
             await dbDeleteDoc('personnels', id);
-            triggerToast('success', `Agent administratif "${p?.fullName || id}" retiré !`);
+            triggerToast('success', `Agent "${p?.fullName || id}" retiré !`);
         } catch (err) {
-            triggerToast('error', "Échec de suppression de l'agent.");
+            triggerToast('error', "Échec de suppression.");
         }
     };
 
@@ -608,8 +607,8 @@ function App() {
         const name = person?.fullName || id;
         setConfirmModal({
             isOpen: true,
-            title: "Retirer l'agent administratif ?",
-            message: `Voulez-vous vraiment retirer l'agent administratif "${name}" du registre ?`,
+            title: "Retirer l'agent ?",
+            message: `Retirer l'agent "${name}" ?`,
             onConfirm: () => executeDeletePersonnel(id)
         });
     };
@@ -619,9 +618,9 @@ function App() {
         setFournisseurs(fournisseurs.filter(f => f.id !== id));
         try {
             await dbDeleteDoc('fournisseurs', id);
-            triggerToast('success', `Fournisseur "${f?.nomComplet || id}" retiré avec succès.`);
+            triggerToast('success', `Fournisseur "${f?.nomComplet || id}" retiré.`);
         } catch (err) {
-            triggerToast('error', "Échec de retrait du fournisseur.");
+            triggerToast('error', "Échec de retrait.");
         }
     };
 
@@ -631,7 +630,7 @@ function App() {
         setConfirmModal({
             isOpen: true,
             title: "Supprimer le fournisseur ?",
-            message: `Voulez-vous rompre la fiche et supprimer le fournisseur "${name}" ?`,
+            message: `Supprimer le fournisseur "${name}" ?`,
             onConfirm: () => executeDeleteFournisseur(id)
         });
     };
@@ -643,7 +642,7 @@ function App() {
             await dbDeleteDoc('events', id);
             triggerToast('success', `Événement "${ev?.name || id}" déprogrammé.`);
         } catch (err) {
-            triggerToast('error', "Échec d'annulation de l'événement.");
+            triggerToast('error', "Échec d'annulation.");
         }
     };
 
@@ -653,7 +652,7 @@ function App() {
         setConfirmModal({
             isOpen: true,
             title: "Déprogrammer l'événement ?",
-            message: `Souhaitez-vous vraiment déprogrammer l'événement "${name}" ?`,
+            message: `Déprogrammer "${name}" ?`,
             onConfirm: () => executeDeleteEvent(id)
         });
     };
@@ -665,7 +664,7 @@ function App() {
             await dbDeleteDoc('tasks', id);
             triggerToast('success', `Tâche "${t?.name || id}" supprimée.`);
         } catch (err) {
-            triggerToast('error', "Échec d'annulation de la tâche.");
+            triggerToast('error', "Échec d'annulation.");
         }
     };
 
@@ -675,7 +674,7 @@ function App() {
         setConfirmModal({
             isOpen: true,
             title: "Supprimer la tâche ?",
-            message: `Voulez-vous supprimer définitivement la tâche "${name}" ?`,
+            message: `Supprimer la tâche "${name}" ?`,
             onConfirm: () => executeDeleteTask(id)
         });
     };
@@ -686,7 +685,7 @@ function App() {
             await dbDeleteDoc('invoices', id);
             triggerToast('success', `Facture "${id}" éliminée !`);
         } catch (err) {
-            triggerToast('error', "Échec d'annulation de la facture.");
+            triggerToast('error', "Échec d'annulation.");
         }
     };
 
@@ -694,7 +693,7 @@ function App() {
         setConfirmModal({
             isOpen: true,
             title: "Supprimer la facture ?",
-            message: `Voulez-vous vraiment supprimer définitivement la facture "${id}" ? Cette action est irréversible.`,
+            message: `Supprimer la facture "${id}" ?`,
             onConfirm: () => executeDeleteInvoice(id)
         });
     };
@@ -704,9 +703,9 @@ function App() {
         try {
             const { id, ...properties } = updated;
             await dbUpdateDoc('clients', id, properties);
-            triggerToast('success', `Données du client "${updated.name}" sauvegardées !`);
+            triggerToast('success', `Client "${updated.name}" sauvegardé !`);
         } catch (err) {
-            triggerToast('error', "Échec lors de la mise à jour.");
+            triggerToast('error', "Échec de mise à jour.");
         }
     };
 
@@ -716,9 +715,9 @@ function App() {
             const { id, ...properties } = updated;
             const clean = { ...properties, procedures: null };
             await dbUpdateDoc('cases', id, clean);
-            triggerToast('success', `Modifications du dossier "${updated.name}" validées !`);
+            triggerToast('success', `Dossier "${updated.name}" validé !`);
         } catch (err) {
-            triggerToast('error', "Erreur lors de la mise à jour.");
+            triggerToast('error', "Erreur de mise à jour.");
         }
     };
 
@@ -728,9 +727,9 @@ function App() {
             const { id, ...properties } = updated;
             const clean = { ...properties, photo: null };
             await dbUpdateDoc('avocats', id, clean);
-            triggerToast('success', `Profil de l'avocat "${updated.fullName}" ajusté !`);
+            triggerToast('success', `Profil "${updated.fullName}" ajusté !`);
         } catch (err) {
-            triggerToast('error', "Échec de restructuration de la fiche.");
+            triggerToast('error', "Échec de restructuration.");
         }
     };
 
@@ -739,9 +738,9 @@ function App() {
         try {
             const { id, ...properties } = updated;
             await dbUpdateDoc('personnels', id, properties);
-            triggerToast('success', `Modification de l'agent "${updated.fullName}" enregistrée !`);
+            triggerToast('success', `Agent "${updated.fullName}" enregistré !`);
         } catch (err) {
-            triggerToast('error', "Impossible d'appliquer la correction.");
+            triggerToast('error', "Impossible d'appliquer.");
         }
     };
 
@@ -802,7 +801,13 @@ function App() {
 
     return (
         <div className="flex h-screen bg-gray-100 dark:bg-[#070b13] font-sans overflow-hidden transition-colors duration-300">
-            <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />
+            <Sidebar 
+                currentPage={currentPage} 
+                setCurrentPage={setCurrentPage} 
+                onLogout={handleLogout} 
+                isSidebarOpen={isSidebarOpen}
+                toggleSidebar={() => setSidebarOpen(!isSidebarOpen)}
+            />
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 <Header 
                     searchQuery={searchQuery} 
@@ -813,6 +818,7 @@ function App() {
                     setCurrentPage={setCurrentPage} 
                     isDarkMode={isDarkMode}
                     setIsDarkMode={setIsDarkMode}
+                    toggleSidebar={() => setSidebarOpen(!isSidebarOpen)}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8 pb-20 md:pb-8 custom-scrollbar relative">
                     {renderPage()}
@@ -821,23 +827,22 @@ function App() {
 
                 <BottomNavBar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />
 
-                {/* Micro-Interaction Toast Notifications Overlay */}
             <div className="fixed bottom-5 right-5 space-y-3 z-50 pointer-events-none">
                 <AnimatePresence>
                     {toasts.map((toast) => {
                         const isSync = toast.text.includes("Synchronisation");
-                        const isDeleted = toast.text.includes("supprim") || toast.text.includes("retir") || toast.text.includes("révoqu") || toast.text.includes("élimin") || toast.text.includes("déprogramm");
-                        const isUpdate = toast.text.includes("mis à jour") || toast.text.includes("sauvegard") || toast.text.includes("valid") || toast.text.includes("ajust") || toast.text.includes("modific");
+                        const isDeleted = toast.text.includes("supprim") || toast.text.includes("retir");
+                        const isUpdate = toast.text.includes("mis à jour") || toast.text.includes("valid");
 
-                        let title = "Enregistrement réussi !";
+                        let title = "Succès !";
                         if (toast.type === 'error') {
-                            title = "Échec de l'opération";
+                            title = "Échec";
                         } else if (isSync) {
-                            title = "Synchronisation Firestore";
+                            title = "Synchro DB";
                         } else if (isDeleted) {
-                            title = "Suppression réussie";
+                            title = "Suppression";
                         } else if (isUpdate) {
-                            title = "Mise à jour réussie";
+                            title = "Mise à jour";
                         }
 
                         return (
@@ -848,8 +853,8 @@ function App() {
                                 exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.25 } }}
                                 className={`p-4 rounded-2xl shadow-2xl pointer-events-auto flex items-start space-x-3 text-white max-w-sm border backdrop-blur-md ${
                                     toast.type === 'success' 
-                                        ? 'bg-slate-900/95 border-emerald-500/50 text-emerald-550 shadow-emerald-950/30' 
-                                        : 'bg-slate-900/95 border-rose-500/50 text-rose-550 shadow-rose-950/30'
+                                        ? 'bg-slate-900/95 border-emerald-500/50 text-emerald-550' 
+                                        : 'bg-slate-900/95 border-rose-500/50 text-rose-550'
                                 }`}
                             >
                                 <span className={`flex-shrink-0 text-lg flex items-center justify-center p-2 rounded-xl ${
@@ -881,11 +886,9 @@ function App() {
                 </AnimatePresence>
             </div>
 
-            {/* Modal de Confirmation de Suppression */}
             <AnimatePresence>
                 {confirmModal.isOpen && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        {/* Backdrop */}
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -894,7 +897,6 @@ function App() {
                             className="absolute inset-0 bg-slate-900/60 backdrop-blur-md cursor-pointer"
                         />
                         
-                        {/* Modal Contenu */}
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -902,9 +904,8 @@ function App() {
                             transition={{ type: "spring", duration: 0.4 }}
                             className="bg-white rounded-3xl border border-rose-100 shadow-2xl relative w-full max-w-md overflow-hidden z-10 p-6 flex flex-col pointer-events-auto"
                         >
-                            {/* Alert Icon & Heading */}
                             <div className="flex items-start space-x-4 mb-4">
-                                <span className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 shadow-sm animate-pulse">
+                                <span className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 shadow-sm">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                                     </svg>
@@ -919,7 +920,6 @@ function App() {
                                 </div>
                             </div>
 
-                            {/* Actions Group */}
                             <div className="flex items-center justify-end space-x-2 mt-4 bg-slate-50 -mx-6 -mb-6 p-4 border-t border-slate-150">
                                 <button
                                     onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
@@ -934,7 +934,7 @@ function App() {
                                     }}
                                     className="px-5 py-2.5 text-xs font-black text-white rounded-xl bg-rose-600 hover:bg-rose-700 shadow-lg shadow-rose-600/15 active:scale-95 transition cursor-pointer"
                                 >
-                                    Confirmer la suppression
+                                    Confirmer
                                 </button>
                             </div>
                         </motion.div>
@@ -942,7 +942,6 @@ function App() {
                 )}
             </AnimatePresence>
 
-            {/* Alarm Reminder Ringing Dialog Interface */}
             <AnimatePresence>
                 {activeAlarmTask && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
@@ -952,7 +951,6 @@ function App() {
                             exit={{ scale: 0.9, opacity: 0 }}
                             className="bg-white rounded-3xl shadow-2xl p-6 max-w-md w-full border border-red-100 overflow-hidden text-center relative"
                         >
-                            {/* Animated ring glowing stripe */}
                             <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-500 via-orange-500 to-red-500" />
                             
                             <div className="my-6 relative flex justify-center">
@@ -965,7 +963,7 @@ function App() {
                             </div>
 
                             <span className="inline-block px-3 py-1 bg-red-50 text-red-700 font-extrabold text-[10px] tracking-widest uppercase rounded-full border border-red-100">
-                                Rappel de Tâche Actif
+                                Rappel Actif
                             </span>
 
                             <h3 className="text-xl font-bold text-gray-900 mt-4 leading-tight">
@@ -979,14 +977,13 @@ function App() {
 
                             {activeAlarmTask.notes && (
                                 <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-gray-150 text-left w-full">
-                                    <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider block mb-1">Notes de tâche :</span>
+                                    <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider block mb-1">Notes :</span>
                                     <p className="text-xs text-gray-650 italic leading-relaxed">
                                         {activeAlarmTask.notes}
                                     </p>
                                 </div>
                             )}
 
-                            {/* Alarm Actions */}
                             <div className="mt-8 grid grid-cols-2 gap-3 pb-2">
                                 <button
                                     onClick={handleSnoozeAlarm}

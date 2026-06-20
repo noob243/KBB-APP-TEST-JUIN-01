@@ -1,35 +1,115 @@
 # KBB App - Application de Gestion de Cabinet d'Avocats
 
-Bienvenue sur le dépôt de KBB App, une application web moderne conçue pour la gestion complète d'un cabinet d'avocats. Cette application a été développée comme une démonstration interactive et fonctionnelle.
+Bienvenue sur le dépôt de KBB App, une application moderne conçue pour la gestion complète d'un cabinet d'avocats.
 
-## ✨ Fonctionnalités Principales
+Cette application est développée avec React (Vite), TypeScript, et Tailwind CSS pour le front-end, et utilise Supabase pour la base de données en temps réel. Elle est également encapsulée avec Capacitor pour générer des applications natives pour Android et iOS.
 
-- **Tableau de Bord Intuitif** : Vue d'ensemble des dossiers actifs, des clients et des événements à venir.
-- **Gestion des Clients** : Ajout, consultation et gestion de la base de données clients.
-- **Gestion des Dossiers** : Création de dossiers détaillés avec liaison aux clients, gestion des tâches, des statuts et ajout de pièces jointes.
-- **Module Événements** : Suivi des audiences, conférences, colloques et autres événements importants.
-- **Agenda & Tâches** : Création et suivi des tâches liées aux dossiers, avec échéances et assignations.
-- **Messagerie Interne** : Un système de chat pour la communication entre les membres du cabinet.
-- **Facturation** : Enregistrement et suivi des factures, avec calcul automatique des montants restants et gestion des statuts de paiement.
-- **Gestion des Avocats** : Répertoire détaillé des avocats du cabinet avec leurs informations professionnelles et de contact.
-- **Panneau d'Administration** : Une section de gestion centralisée pour modifier ou supprimer n'importe quelle donnée de l'application.
-- **Exportation en PDF** : Génération de rapports PDF pour les listes de clients et de dossiers.
-- **Authentification** : Une interface de connexion pour sécuriser l'accès à l'application.
-- **Persistance des Données** : Toutes les données sont sauvegardées localement dans votre navigateur (`localStorage`), ce qui rend la démo entièrement fonctionnelle et persistante entre les sessions.
+## ✨ Fonctionnalités
 
-## 💻 Technologies Utilisées
+- **Gestion Complète :** Clients, dossiers, tâches, événements, facturation, et plus encore.
+- **Base de Données en Temps Réel :** Synchronisation instantanée des données grâce à Supabase.
+- **Multiplateforme :** Fonctionne sur le web, Android et iOS.
+- **Interface Moderne :** Design épuré et réactif avec des icônes professionnelles.
+- **Authentification Sécurisée :** Gestion des accès via Supabase Auth.
+- **Notifications :** Rappels de tâches et d'événements.
+- **Mode Sombre :** Interface adaptable pour le confort visuel.
 
-- **React** (via CDN)
-- **TypeScript**
-- **Tailwind CSS** (via CDN)
-- **jsPDF** & **jspdf-autotable** (pour l'exportation PDF)
-- **LocalStorage** (pour la persistance des données côté client)
+## 🚀 Démarrage et Déploiement
 
-## 🚀 Comment Lancer la Démo
+### 1. **Prérequis**
 
-Ce projet est conçu pour fonctionner **sans aucune étape de build ou d'installation complexe**.
+- **Node.js** (LTS) et **npm**
+- **Android Studio** (pour la génération de l'APK Android)
+- **Xcode** (pour la génération de l'archive iOS)
+- Un compte **Vercel** pour le déploiement web.
+- Un compte **GitHub** pour le versioning.
 
-1.  **Clonez ou téléchargez** ce dépôt.
-2.  Ouvrez le fichier `index.html` directement dans votre navigateur web (Google Chrome, Firefox, etc.).
+### 2. **Installation**
 
-Et voilà ! L'application est prête à être utilisée. Toutes les modifications que vous ferez seront sauvegardées dans votre navigateur.
+Clonez le dépôt et installez les dépendances :
+
+```bash
+git clone https://github.com/noob243/KBB-APP-TEST-JUIN-01.git
+cd KBB-APP-TEST-JUIN-01
+npm install
+```
+
+### 3. **Configuration de Supabase**
+
+Créez un fichier `.env` à la racine du projet et ajoutez-y vos clés Supabase :
+
+```
+VITE_SUPABASE_URL=VOTRE_URL_SUPABASE
+VITE_SUPABASE_ANON_KEY=VOTRE_CLE_ANON_SUPABASE
+```
+
+### 4. **Développement Local**
+
+Pour lancer l'application en mode développement sur votre navigateur :
+
+```bash
+npm run dev
+```
+
+## 📦 Déploiement sur Vercel
+
+Ce projet est configuré pour un déploiement "push-to-deploy" avec Vercel.
+
+1.  **Poussez votre code sur GitHub :**
+    ```bash
+    git add .
+    git commit -m "Décrivez vos modifications"
+    git push origin main
+    ```
+
+2.  **Importez votre projet sur Vercel :**
+    - Connectez-vous à votre compte Vercel.
+    - Créez un nouveau projet et sélectionnez votre dépôt GitHub.
+    - Vercel détectera automatiquement qu'il s'agit d'un projet Vite.
+    - **Important :** Allez dans les paramètres du projet sur Vercel, section "Environment Variables", et ajoutez vos clés `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY`.
+
+Vercel déploiera automatiquement chaque nouvelle version poussée sur la branche `main`.
+
+## 📱 Génération des Applications Mobiles
+
+### Android (.apk)
+
+1.  **Build de l'application web :**
+    ```bash
+    npm run build
+    ```
+
+2.  **Synchroniser avec Capacitor :**
+    ```bash
+    npx cap sync
+    ```
+
+3.  **Ouvrir dans Android Studio :**
+    ```bash
+    npx cap open android
+    ```
+
+4.  **Générer l'APK :**
+    - Dans Android Studio, allez dans le menu `Build` > `Build Bundle(s) / APK(s)` > `Build APK(s)`.
+    - Une fois la génération terminée, vous trouverez le fichier `app-debug.apk` dans le dossier `android/app/build/outputs/apk/debug`.
+
+### iOS (.ipa) - *Nécessite un Mac*
+
+1.  **Build et synchronisation :**
+    ```bash
+    npm run build
+    npx cap sync
+    ```
+
+2.  **Ouvrir dans Xcode :**
+    ```bash
+    npx cap open ios
+    ```
+
+3.  **Configuration dans Xcode :**
+    - Sélectionnez votre appareil de destination (simulateur ou iPhone connecté).
+    - Dans l'onglet `Signing & Capabilities`, configurez votre compte de développeur Apple.
+
+4.  **Archiver l'application :**
+    - Dans le menu, allez à `Product` > `Archive`.
+    - Une fois l'archivage terminé, l'organisateur s'ouvrira. Vous pourrez y distribuer l'application (pour TestFlight ou l'App Store), ce qui générera le fichier `.ipa`.
