@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { usePersistentState } from './hooks/usePersistentState';
-import { initialClients, initialCases, initialEvents, initialTasks, initialInvoices, initialAvocats, initialPersonnels, initialFournisseurs } from './data/mockData';
+import { supabaseService } from './lib/supabaseService';
 
 import Sidebar from './components/Sidebar';
 import BottomNavBar from './components/BottomNavBar';
@@ -25,40 +24,31 @@ import { playAlarmSound, stopAllAlarmSounds } from './utils/audio';
 
 // Supabase core configuration
 import { supabase } from './supabaseClient';
-import { 
-    dbCreateDoc, 
-    dbUpdateDoc, 
-    dbDeleteDoc, 
-    syncLocalCollection,
-    onSnapshotPostgres
-} from './lib/postgresService';
 import { motion, AnimatePresence } from 'motion/react';
 import EmailComposerModal from './components/modals/EmailComposerModal';
 
 declare const jspdf: any;
 
 function App() {
-    const [isAuthenticated, setIsAuthenticated] = usePersistentState('kbb_auth', false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [currentPage, setCurrentPage] = useState('Dashboard');
     const [searchQuery, setSearchQuery] = useState('');
     const [activeAlarmTask, setActiveAlarmTask] = useState<Task | null>(null);
     const stopActiveAlarmRef = React.useRef<(() => void) | null>(null);
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     
-    // Core collection states backed by localStorage for offline fast fallback, and updated by real-time Firestore synchronization
-    const [clients, setClients] = usePersistentState<Client[]>('kbb_clients', initialClients);
-    const [cases, setCases] = usePersistentState<Case[]>('kbb_cases', initialCases);
-    const [events, setEvents] = usePersistentState<Event[]>('kbb_events', initialEvents);
-    const [tasks, setTasks] = usePersistentState<Task[]>('kbb_tasks', initialTasks);
-    const [invoices, setInvoices] = usePersistentState<Invoice[]>('kbb_invoices', initialInvoices);
-    const [avocats, setAvocats] = usePersistentState<Avocat[]>('kbb_avocats', initialAvocats);
-    const [personnels, setPersonnels] = usePersistentState<Personnel[]>('kbb_personnels', initialPersonnels);
-    const [fournisseurs, setFournisseurs] = usePersistentState<Fournisseur[]>('kbb_fournisseurs', initialFournisseurs);
+    const [clients, setClients] = useState<Client[]>([]);
+    const [cases, setCases] = useState<Case[]>([]);
+    const [events, setEvents] = useState<Event[]>([]);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [invoices, setInvoices] = useState<Invoice[]>([]);
+    const [avocats, setAvocats] = useState<Avocat[]>([]);
+    const [personnels, setPersonnels] = useState<Personnel[]>([]);
+    const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
 
     const [isDbConnected, setIsDbConnected] = useState(false);
-    const [isSyncComplete, setIsSyncComplete] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
-    const [isDarkMode, setIsDarkMode] = usePersistentState('kbb_darkMode', false);
+    const [isDarkMode, setIsDarkMode] = useState(false);
 
     useEffect(() => {
         if (isDarkMode) {
@@ -116,13 +106,33 @@ function App() {
         }, 5000);
     };
 
-    // 1. Establish Supabase Authentication Session state
+    const fetchData = async () => {
+        setIsSyncing(true);
+        try {
+            const data = await supabaseService.fetchAllData();
+            setClients(data.clients || []);
+            setCases(data.cases || []);
+            setEvents(data.events || []);
+            setTasks(data.tasks || []);
+            setInvoices(data.invoices || []);
+            setAvocats(data.avocats || []);
+            setPersonnels(data.personnels || []);
+            setFournisseurs(data.fournisseurs || []);
+            triggerToast('success', 'Données chargées depuis Supabase !');
+        } catch (error) {
+            triggerToast('error', 'Erreur de chargement des données.');
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
     useEffect(() => {
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
                 setIsAuthenticated(true);
                 setIsDbConnected(true);
+                fetchData();
             } else {
                 setIsAuthenticated(false);
                 setIsDbConnected(false);
@@ -134,6 +144,7 @@ function App() {
             if (session) {
                 setIsAuthenticated(true);
                 setIsDbConnected(true);
+                fetchData();
             } else {
                 setIsAuthenticated(false);
                 setIsDbConnected(false);
@@ -145,35 +156,6 @@ function App() {
         };
     }, []);
 
-    // 2. Synchronize local storage data (including offline inserts) to Cloud PostgreSQL on connection
-    useEffect(() => {
-        if (!isDbConnected) return;
-        const performDataSync = async () => {
-            setIsSyncing(true);
-            try {
-                console.log("Synchronizing all local states with PostgreSQL...");
-                
-                await syncLocalCollection('clients', clients);
-                await syncLocalCollection('cases', cases);
-                await syncLocalCollection('events', events);
-                await syncLocalCollection('tasks', tasks);
-                await syncLocalCollection('invoices', invoices);
-                await syncLocalCollection('avocats', avocats);
-                await syncLocalCollection('personnels', personnels);
-                await syncLocalCollection('fournisseurs', fournisseurs);
-                
-                triggerToast('success', 'Synchronisation avec PostgreSQL réussie !');
-                setIsSyncComplete(true);
-            } catch (err) {
-                console.error("Local records database synchronization failed on startup:", err);
-                triggerToast('error', 'Échec lors de la synchronisation de certains enregistrements.');
-                setIsSyncComplete(true); // Allow user session to continue anyway
-            } finally {
-                setIsSyncing(false);
-            }
-        };
-        performDataSync();
-    }, [isDbConnected]);
 
     // Task reminder observer and notification checker loops
     useEffect(() => {
@@ -250,13 +232,7 @@ function App() {
             reminderTriggered: true
         };
 
-        setTasks(prev => prev.map(t => t.id === updated.id ? updated : t));
-        try {
-            const { id, ...cleanTask } = updated;
-            await dbUpdateDoc('tasks', id, cleanTask);
-        } catch (err) {
-            console.error("Failed to dismiss alarm in DB:", err);
-        }
+        await handleUpdateTask(updated);
         setActiveAlarmTask(null);
         triggerToast('success', "Rappel acquitté avec succès.");
     };
@@ -281,79 +257,20 @@ function App() {
             reminderTriggered: false
         };
 
-        setTasks(prev => prev.map(t => t.id === updated.id ? updated : t));
-        try {
-            const { id, ...cleanTask } = updated;
-            await dbUpdateDoc('tasks', id, cleanTask);
-        } catch (err) {
-            console.error("Failed to snooze alarm in DB:", err);
-        }
+        await handleUpdateTask(updated);
         setActiveAlarmTask(null);
         triggerToast('success', `Régler à nouveau pour dans 5 min (${snoozedTime})`);
     };
 
     const handleUpdateTask = async (updatedTask: Task) => {
-        setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
         try {
-            const { id, ...cleanTask } = updatedTask;
-            await dbUpdateDoc('tasks', id, cleanTask);
+            await supabaseService.updateTask(updatedTask.id, updatedTask);
+            await fetchData(); // Refresh data
             triggerToast('success', `Tâche "${updatedTask.name}" mise à jour !`);
         } catch (err) {
             triggerToast('error', "Échec de modification de la tâche.");
         }
     };
-
-    // 3. Realtime listening sync from Cloud DB (PostgreSQL)
-    useEffect(() => {
-        if (!isDbConnected || !isSyncComplete) return;
-
-        try {
-            const unsubClients = onSnapshotPostgres('clients', (list) => {
-                setClients(list);
-            }, (err) => console.error("Clients sync error:", err));
-
-            const unsubCases = onSnapshotPostgres('cases', (list) => {
-                setCases(list);
-            }, (err) => console.error("Cases sync error:", err));
-
-            const unsubEvents = onSnapshotPostgres('events', (list) => {
-                setEvents(list);
-            }, (err) => console.error("Events sync error:", err));
-
-            const unsubTasks = onSnapshotPostgres('tasks', (list) => {
-                setTasks(list);
-            }, (err) => console.error("Tasks sync error:", err));
-
-            const unsubInvoices = onSnapshotPostgres('invoices', (list) => {
-                setInvoices(list);
-            }, (err) => console.error("Invoices sync error:", err));
-
-            const unsubAvocats = onSnapshotPostgres('avocats', (list) => {
-                setAvocats(list);
-            }, (err) => console.error("Avocats sync error:", err));
-
-            const unsubPersonnels = onSnapshotPostgres('personnels', (list) => {
-                setPersonnels(list);
-            }, (err) => console.error("Personnels sync error:", err));
-
-            const unsubFournisseurs = onSnapshotPostgres('fournisseurs', (list) => {
-                setFournisseurs(list);
-            }, (err) => console.error("Fournisseurs sync error:", err));
-
-            return () => {
-                unsubClients();
-                unsubCases();
-                unsubEvents();
-                unsubTasks();
-                unsubInvoices();
-                unsubAvocats();
-                unsubPersonnels();
-                unsubFournisseurs();
-            };
-        } catch (syncError) {
-            console.error("PostgreSQL synchronizers preparation failed:", syncError);
-        }
-    }, [isDbConnected, isSyncComplete]);
 
     const lawyerNames = avocats.map((a) => a.fullName);
 
@@ -401,46 +318,30 @@ function App() {
         handleExportPDF("Dossiers", headers, data);
     };
 
-    const handleAddClient = async (newClient: Omit<Client, 'id'> & { id?: string | number }) => {
-        const nextId = newClient.id || (clients.length > 0 ? Math.max(...clients.map(c => typeof c.id === 'number' ? c.id : 0)) : 0) + 1;
-        const { id, ...cleanClient } = newClient;
-        const record = { ...cleanClient, id: nextId };
-        setClients(prev => [...prev, record]);
+    const handleAddClient = async (newClient: Omit<Client, 'id'>) => {
         try {
-            await dbCreateDoc('clients', nextId, cleanClient);
+            await supabaseService.addClient(newClient);
+            await fetchData(); // Refresh data
             triggerToast('success', `Client "${newClient.name}" créé !`);
         } catch (err) {
             triggerToast('error', `Échec de l'enregistrement.`);
         }
     };
 
-    const handleAddCase = async (newCase: Case, tasksToAdd?: Omit<Task, 'id'>[]) => {
-        setCases(prev => [...prev, newCase]);
+    const handleAddCase = async (newCase: Omit<Case, 'id'>) => {
         try {
-            const { id, ...cleanCase } = newCase;
-            await dbCreateDoc('cases', id, cleanCase);
-            
-            if (tasksToAdd && tasksToAdd.length > 0) {
-                let currentMaxId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) : 0;
-                for (const t of tasksToAdd) {
-                    currentMaxId++;
-                    const taskProps = { ...t, id: currentMaxId };
-                    setTasks(prev => [...prev, taskProps]);
-                    const { id: _, ...cleanTask } = taskProps;
-                    await dbCreateDoc('tasks', currentMaxId, cleanTask);
-                }
-            }
+            await supabaseService.addCase(newCase);
+            await fetchData(); // Refresh data
             triggerToast('success', `Dossier "${newCase.name}" enregistré !`);
         } catch (err) {
             triggerToast('error', `Échec de l'écriture du dossier.`);
         }
     };
 
-    const handleAddEvent = async (newEvent: Event) => {
-        setEvents(prev => [...prev, newEvent]);
+    const handleAddEvent = async (newEvent: Omit<Event, 'id'>) => {
         try {
-            const { id, ...cleanEvent } = newEvent;
-            await dbCreateDoc('events', id, cleanEvent);
+            await supabaseService.addEvent(newEvent);
+            await fetchData(); // Refresh data
             triggerToast('success', `Événement "${newEvent.name}" planifié !`);
         } catch (err) {
             triggerToast('error', "Échec de l'enregistrement.");
@@ -448,10 +349,9 @@ function App() {
     };
 
     const handleUpdateEvent = async (updatedEvent: Event) => {
-        setEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e));
         try {
-            const { id, ...cleanEvent } = updatedEvent;
-            await dbUpdateDoc('events', id, cleanEvent);
+            await supabaseService.updateEvent(updatedEvent.id, updatedEvent);
+            await fetchData(); // Refresh data
             triggerToast('success', `Événement "${updatedEvent.name}" mis à jour !`);
         } catch (err) {
             triggerToast('error', "Échec de la mise à jour.");
@@ -459,11 +359,9 @@ function App() {
     };
 
     const handleAddTask = async (newTask: Omit<Task, 'id'>) => {
-        const nextId = (tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) : 0) + 1;
-        const record = { ...newTask, id: nextId };
-        setTasks(prev => [...prev, record]);
         try {
-            await dbCreateDoc('tasks', nextId, newTask);
+            await supabaseService.addTask(newTask);
+            await fetchData(); // Refresh data
             triggerToast('success', `Tâche "${newTask.name}" programmée.`);
         } catch (err) {
             triggerToast('error', "Impossible d'enregistrer la tâche.");
@@ -471,54 +369,49 @@ function App() {
     };
 
     const handleUpdateTaskStatus = async (id: number, status: 'Effectué' | 'Non effectué' | 'Effectué à moitié') => {
-        setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t));
         try {
-            await dbUpdateDoc('tasks', id, { status });
+            await supabaseService.updateTask(id, { status });
+            await fetchData(); // Refresh data
             triggerToast('success', `Statut de la tâche mis à jour !`);
         } catch (err) {
             triggerToast('error', "Échec de modification.");
         }
     };
 
-    const handleAddInvoice = async (newInvoice: Invoice) => {
-        setInvoices(prev => [...prev, newInvoice]);
+    const handleAddInvoice = async (newInvoice: Omit<Invoice, 'id'>) => {
         try {
-            const { id, ...cleanInvoice } = newInvoice;
-            await dbCreateDoc('invoices', id, cleanInvoice);
+            await supabaseService.addInvoice(newInvoice);
+            await fetchData(); // Refresh data
             triggerToast('success', `Facture "${newInvoice.id}" émise !`);
         } catch (err) {
             triggerToast('error', "Échec de l'émission.");
         }
     };
 
-    const handleAddAvocat = async (newAvocat: Avocat) => {
-        setAvocats(prev => [...prev, newAvocat]);
+    const handleAddAvocat = async (newAvocat: Omit<Avocat, 'id'>) => {
         try {
-            const { id, ...cleanAvocat } = newAvocat;
-            const payload = { ...cleanAvocat, photo: null };
-            await dbCreateDoc('avocats', id, payload);
+            await supabaseService.addAvocat(newAvocat);
+            await fetchData(); // Refresh data
             triggerToast('success', `Profil de l'avocat ${newAvocat.fullName} créé !`);
         } catch (err) {
             triggerToast('error', "Erreur d'enregistrement.");
         }
     };
 
-    const handleAddPersonnel = async (newPersonnel: Personnel) => {
-        setPersonnels(prev => [...prev, newPersonnel]);
+    const handleAddPersonnel = async (newPersonnel: Omit<Personnel, 'id'>) => {
         try {
-            const { id, ...cleanPersonnel } = newPersonnel;
-            await dbCreateDoc('personnels', id, cleanPersonnel);
+            await supabaseService.addPersonnel(newPersonnel);
+            await fetchData(); // Refresh data
             triggerToast('success', `Agent "${newPersonnel.fullName}" enregistré !`);
         } catch (err) {
             triggerToast('error', "Erreur lors de l'inscription.");
         }
     };
 
-    const handleAddFournisseur = async (newFournisseur: Fournisseur) => {
-        setFournisseurs(prev => [...prev, newFournisseur]);
+    const handleAddFournisseur = async (newFournisseur: Omit<Fournisseur, 'id'>) => {
         try {
-            const { id, ...cleanFournisseur } = newFournisseur;
-            await dbCreateDoc('fournisseurs', id, cleanFournisseur);
+            await supabaseService.addFournisseur(newFournisseur);
+            await fetchData(); // Refresh data
             triggerToast('success', `Fournisseur "${newFournisseur.nomComplet}" validé !`);
         } catch (err) {
             triggerToast('error', "Échec de l'enregistrement.");
@@ -527,9 +420,9 @@ function App() {
 
     const executeDeleteClient = async (id: number) => {
         const client = clients.find(c => c.id === id);
-        setClients(clients.filter(c => c.id !== id));
         try {
-            await dbDeleteDoc('clients', id);
+            await supabaseService.deleteClient(id);
+            await fetchData(); // Refresh data
             triggerToast('success', `Client "${client?.name || id}" révoqué !`);
         } catch (err) {
             triggerToast('error', "Échec de la suppression.");
@@ -549,9 +442,9 @@ function App() {
 
     const executeDeleteCase = async (id: string) => {
         const d = cases.find(c => c.id === id);
-        setCases(cases.filter(c => c.id !== id));
         try {
-            await dbDeleteDoc('cases', id);
+            await supabaseService.deleteCase(id);
+            await fetchData(); // Refresh data
             triggerToast('success', `Dossier "${d?.name || id}" archivé !`);
         } catch (err) {
             triggerToast('error', "Impossible d'archiver.");
@@ -571,9 +464,9 @@ function App() {
 
     const executeDeleteAvocat = async (id: string) => {
         const a = avocats.find(x => x.id === id);
-        setAvocats(avocats.filter(a => a.id !== id));
         try {
-            await dbDeleteDoc('avocats', id);
+            await supabaseService.deleteAvocat(id);
+            await fetchData(); // Refresh data
             triggerToast('success', `Départ de "${a?.fullName || id}" acté !`);
         } catch (err) {
             triggerToast('error', "Échec de la désinscription.");
@@ -593,9 +486,9 @@ function App() {
 
     const executeDeletePersonnel = async (id: string) => {
         const p = personnels.find(x => x.id === id);
-        setPersonnels(personnels.filter(p => p.id !== id));
         try {
-            await dbDeleteDoc('personnels', id);
+            await supabaseService.deletePersonnel(id);
+            await fetchData(); // Refresh data
             triggerToast('success', `Agent "${p?.fullName || id}" retiré !`);
         } catch (err) {
             triggerToast('error', "Échec de suppression.");
@@ -615,9 +508,9 @@ function App() {
 
     const executeDeleteFournisseur = async (id: string) => {
         const f = fournisseurs.find(x => x.id === id);
-        setFournisseurs(fournisseurs.filter(f => f.id !== id));
         try {
-            await dbDeleteDoc('fournisseurs', id);
+            await supabaseService.deleteFournisseur(id);
+            await fetchData(); // Refresh data
             triggerToast('success', `Fournisseur "${f?.nomComplet || id}" retiré.`);
         } catch (err) {
             triggerToast('error', "Échec de retrait.");
@@ -637,9 +530,9 @@ function App() {
 
     const executeDeleteEvent = async (id: string) => {
         const ev = events.find(e => e.id === id);
-        setEvents(events.filter(e => e.id !== id));
         try {
-            await dbDeleteDoc('events', id);
+            await supabaseService.deleteEvent(id);
+            await fetchData(); // Refresh data
             triggerToast('success', `Événement "${ev?.name || id}" déprogrammé.`);
         } catch (err) {
             triggerToast('error', "Échec d'annulation.");
@@ -659,9 +552,9 @@ function App() {
 
     const executeDeleteTask = async (id: number) => {
         const t = tasks.find(x => x.id === id);
-        setTasks(tasks.filter(t => t.id !== id));
         try {
-            await dbDeleteDoc('tasks', id);
+            await supabaseService.deleteTask(id);
+            await fetchData(); // Refresh data
             triggerToast('success', `Tâche "${t?.name || id}" supprimée.`);
         } catch (err) {
             triggerToast('error', "Échec d'annulation.");
@@ -680,9 +573,9 @@ function App() {
     };
 
     const executeDeleteInvoice = async (id: string) => {
-        setInvoices(invoices.filter(i => i.id !== id));
         try {
-            await dbDeleteDoc('invoices', id);
+            await supabaseService.deleteInvoice(id);
+            await fetchData(); // Refresh data
             triggerToast('success', `Facture "${id}" éliminée !`);
         } catch (err) {
             triggerToast('error', "Échec d'annulation.");
@@ -699,10 +592,9 @@ function App() {
     };
 
     const handleUpdateClient = async (updated: Client) => {
-        setClients(prev => prev.map(c => c.id === updated.id ? updated : c));
         try {
-            const { id, ...properties } = updated;
-            await dbUpdateDoc('clients', id, properties);
+            await supabaseService.updateClient(updated.id, updated);
+            await fetchData(); // Refresh data
             triggerToast('success', `Client "${updated.name}" sauvegardé !`);
         } catch (err) {
             triggerToast('error', "Échec de mise à jour.");
@@ -710,11 +602,9 @@ function App() {
     };
 
     const handleUpdateCase = async (updated: Case) => {
-        setCases(prev => prev.map(c => c.id === updated.id ? updated : c));
         try {
-            const { id, ...properties } = updated;
-            const clean = { ...properties, procedures: null };
-            await dbUpdateDoc('cases', id, clean);
+            await supabaseService.updateCase(updated.id, updated);
+            await fetchData(); // Refresh data
             triggerToast('success', `Dossier "${updated.name}" validé !`);
         } catch (err) {
             triggerToast('error', "Erreur de mise à jour.");
@@ -722,11 +612,9 @@ function App() {
     };
 
     const handleUpdateAvocat = async (updated: Avocat) => {
-        setAvocats(prev => prev.map(a => a.id === updated.id ? updated : a));
         try {
-            const { id, ...properties } = updated;
-            const clean = { ...properties, photo: null };
-            await dbUpdateDoc('avocats', id, clean);
+            await supabaseService.updateAvocat(updated.id, updated);
+            await fetchData(); // Refresh data
             triggerToast('success', `Profil "${updated.fullName}" ajusté !`);
         } catch (err) {
             triggerToast('error', "Échec de restructuration.");
@@ -734,10 +622,9 @@ function App() {
     };
 
     const handleUpdatePersonnel = async (updated: Personnel) => {
-        setPersonnels(prev => prev.map(p => p.id === updated.id ? updated : p));
         try {
-            const { id, ...properties } = updated;
-            await dbUpdateDoc('personnels', id, properties);
+            await supabaseService.updatePersonnel(updated.id, updated);
+            await fetchData(); // Refresh data
             triggerToast('success', `Agent "${updated.fullName}" enregistré !`);
         } catch (err) {
             triggerToast('error', "Impossible d'appliquer.");
