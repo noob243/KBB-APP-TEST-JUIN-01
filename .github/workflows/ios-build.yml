@@ -1,0 +1,48 @@
+name: iOS Build (Capacitor)
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-ios:
+    name: Build iOS
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Build web
+        run: |
+          npm run build:web
+
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods
+
+      - name: Install Capacitor CLI
+        run: |
+          npm install -g @capacitor/cli
+
+      - name: Add iOS platform
+        run: |
+          npx cap add ios || true
+          npx cap sync ios
+
+      - name: Open & build with xcodebuild
+        env:
+          APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+        run: |
+          # Placeholder: use fastlane or xcodebuild with signing certs provisioned via secrets.
+          echo "This step requires code signing and provisioning; configure fastlane or manual xcodebuild commands."

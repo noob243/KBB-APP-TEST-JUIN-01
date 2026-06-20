@@ -1,0 +1,65 @@
+/* Responsive fallbacks for environments without Tailwind
+   Provides sidebar collapse behavior and mobile bottom nav handling.
+*/
+:root {
+  --kbb-sidebar-wide: 256px;
+  --kbb-sidebar-narrow: 80px;
+}
+
+.kbb-sidebar {
+  width: var(--kbb-sidebar-wide);
+  min-width: var(--kbb-sidebar-narrow);
+  max-width: var(--kbb-sidebar-wide);
+  transition: width 0.25s ease, transform 0.25s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.kbb-sidebar[data-collapsed="true"] {
+  width: var(--kbb-sidebar-narrow) !important;
+}
+
+/* Hide sidebar on small screens */
+@media (max-width: 767px) {
+  .kbb-sidebar {
+    display: none !important;
+  }
+}
+
+/* Bottom nav: hidden by default, show on small screens */
+.kbb-bottom-nav { display: none; }
+@media (max-width: 767px) {
+  .kbb-bottom-nav { display: flex !important; }
+  .kbb-main-content { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+}
+
+/* Provide a sensible scrollbar for mobile popovers */
+.kbb-bottom-nav + .kbb-bottom-drawer, .kbb-bottom-drawer {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Small utilities */
+.kbb-hidden-mobile { display: none; }
+@media (min-width: 768px) {
+  .kbb-hidden-mobile { display: block; }
+}
+
+/* Slide-up animation for mobile drawer */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.animate-slide-up {
+  animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Safe area support for iOS notch devices */
+.kbb-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+}

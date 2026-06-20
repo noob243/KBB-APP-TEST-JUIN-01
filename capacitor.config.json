@@ -1,0 +1,6 @@
+{
+  "appId": "com.example.kbbapp",
+  "appName": "KBB App",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

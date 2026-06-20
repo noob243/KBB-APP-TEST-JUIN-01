@@ -1,0 +1,41 @@
+{
+  "name": "kbb-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:web": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --max-warnings=0",
+    "cap:init": "npx cap init kbb-app com.example.kbbapp",
+    "cap:add:android": "npx cap add android || true && npx cap sync android",
+    "cap:add:ios": "npx cap add ios || true && npx cap sync ios",
+    "cap:sync": "npx cap sync",
+    "cap:open:android": "npx cap open android",
+    "cap:open:ios": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^5.0.0",
+    "@google/genai": "latest",
+    "@supabase/supabase-js": "^2.43.0",
+    "firebase": "^12.14.0",
+    "lucide-react": "^1.18.0",
+    "motion": "^12.40.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "recharts": "^3.8.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^5.0.0",
+    "@types/node": "^22.14.0",
+    "@typescript-eslint/eslint-plugin": "^8.61.1",
+    "@typescript-eslint/parser": "^8.61.1",
+    "@vitejs/plugin-react": "^5.0.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react": "^7.37.5",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}
