@@ -5,6 +5,31 @@ import { Client, Case, Event, Task, Invoice, Avocat, Personnel } from '../types'
 import { DetailedEditModal } from '../components/DetailedEditModal';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
+// Custom Tooltip Component for Recharts v3
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{ 
+          borderRadius: '12px', 
+          border: '1px solid #e2e8f0', 
+          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+          fontSize: '11px', 
+          fontWeight: 'bold',
+          backgroundColor: 'white', // Added background color for visibility
+          padding: '10px' // Added padding
+      }}>
+        <p style={{ color: '#0f172a', fontWeight: '800' }}>{label}</p>
+        {payload.map((pld, index) => (
+          <p key={index}>
+            {`${pld.name}: ${pld.value}`}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 interface GestionPageProps {
     clients: Client[];
     cases: Case[];
@@ -182,10 +207,7 @@ const GestionPage: FC<GestionPageProps> = (props) => {
                                     tickLine={false}
                                     allowDecimals={false}
                                 />
-                                <Tooltip 
-                                    contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', fontSize: '11px', fontWeight: 'bold' }} 
-                                    labelStyle={{ color: '#0f172a', fontWeight: '800' }}
-                                />
+                                <Tooltip content={<CustomTooltip />} />
                                 <Bar dataKey="completed" name="Tâches complétées" radius={[6, 6, 0, 0]} barSize={28}>
                                     {lawyerCompletedTaskCounts.map((entry, index) => {
                                         const colors = ['#15447c', '#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#3b82f6'];

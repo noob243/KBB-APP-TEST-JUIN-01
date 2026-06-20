@@ -7,6 +7,29 @@ import { Invoice, Case, Client } from '../types';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { Eye, Mail } from 'lucide-react';
 
+// Custom Tooltip Component for Recharts v3
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{ 
+          backgroundColor: '#1e293b', 
+          borderRadius: '12px', 
+          border: 'none', 
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          padding: '10px'
+      }}>
+        <p style={{ color: '#94a3b8', fontSize: '9px', fontWeight: 'bold', marginBottom: '4px' }}>{label}</p>
+        {payload.map((pld, index) => (
+          <p key={index} style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold' }}>
+            {`${pld.name}: ${pld.value} €`}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 interface BillingPageProps {
   invoices: Invoice[];
   cases: Case[];
@@ -172,17 +195,7 @@ const BillingPage: FC<BillingPageProps> = ({ invoices, cases, clients = [], onAd
                                         tickFormatter={(v) => `${v} €`}
                                         tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 'bold' }} 
                                     />
-                                    <Tooltip 
-                                        contentStyle={{ 
-                                            backgroundColor: '#1e293b', 
-                                            borderRadius: '12px', 
-                                            border: 'none', 
-                                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)' 
-                                        }}
-                                        itemStyle={{ color: '#fff', fontSize: '11px', fontWeight: 'bold' }}
-                                        labelStyle={{ color: '#94a3b8', fontSize: '9px', fontWeight: 'bold', marginBottom: '4px' }}
-                                        formatter={(value: any) => [`${value} €`]}
-                                    />
+                                    <Tooltip content={<CustomTooltip />} />
                                     <Area 
                                         type="monotone" 
                                         dataKey="Total facturé" 
