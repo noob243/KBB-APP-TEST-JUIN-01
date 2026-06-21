@@ -5,8 +5,7 @@ const fetchTable = async (tableName: string) => {
     const { data, error } = await supabase.from(tableName).select('*');
     if (error) {
         console.error(`Error fetching ${tableName}:`, error);
-        // Throw a detailed error to be caught by the caller
-        throw new Error(`Erreur de chargement pour la table : ${tableName}. Vérifiez les politiques RLS.`);
+        throw error;
     }
     return data;
 };
@@ -41,28 +40,19 @@ const deleteRecord = async (tableName: string, id: string | number) => {
 };
 
 export const supabaseService = {
+    // Fetch all data
     fetchAllData: async () => {
-        // We fetch tables sequentially to precisely identify which one fails due to RLS policies.
-        const tables = ['clients', 'cases', 'events', 'tasks', 'invoices', 'avocats', 'personnels', 'fournisseurs'];
-        const allData: { [key: string]: any[] } = {};
-
-        for (const table of tables) {
-            // The error from fetchTable will be specific and will halt the loop.
-            const data = await fetchTable(table);
-            allData[table] = data;
-        }
-
-        // This part is only reached if all fetches succeed.
-        return {
-            clients: allData.clients,
-            cases: allData.cases,
-            events: allData.events,
-            tasks: allData.tasks,
-            invoices: allData.invoices,
-            avocats: allData.avocats,
-            personnels: allData.personnels,
-            fournisseurs: allData.fournisseurs,
-        };
+        const [clients, cases, events, tasks, invoices, avocats, personnels, fournisseurs] = await Promise.all([
+            fetchTable('clients'),
+            fetchTable('cases'),
+            fetchTable('events'),
+            fetchTable('tasks'),
+            fetchTable('invoices'),
+            fetchTable('avocats'),
+            fetchTable('personnels'),
+            fetchTable('fournisseurs')
+        ]);
+        return { clients, cases, events, tasks, invoices, avocats, personnels, fournisseurs };
     },
 
     // Client functions

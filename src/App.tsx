@@ -119,9 +119,8 @@ function App() {
             setPersonnels(data.personnels || []);
             setFournisseurs(data.fournisseurs || []);
             triggerToast('success', 'Données chargées depuis Supabase !');
-        } catch (error: any) {
-            // Display the specific error message from the service
-            triggerToast('error', error.message || 'Erreur de chargement des données.');
+        } catch (error) {
+            triggerToast('error', 'Erreur de chargement des données.');
         } finally {
             setIsSyncing(false);
         }
