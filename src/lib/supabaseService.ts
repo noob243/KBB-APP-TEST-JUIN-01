@@ -1,23 +1,23 @@
 import { supabase } from '../supabaseClient';
 
-// Fonction pour récupérer une table avec un nom de table dans l'erreur
-const fetchTableWithErrorLogging = async (tableName: string) => {
-    const { data, error } = await supabase.from(tableName).select('*');
-    if (error) {
-        // Propage une erreur personnalisée qui inclut le nom de la table
-        throw new Error(`Erreur de chargement pour la table : ${tableName}. Vérifiez les politiques RLS.`);
-    }
-    return data;
-};
-
 export const supabaseService = {
     fetchAllData: async () => {
         const tableNames = ['clients', 'cases', 'events', 'tasks', 'invoices', 'avocats', 'personnel', 'fournisseurs'];
         const data: { [key: string]: any[] } = {};
+        const errors: string[] = [];
 
         for (const tableName of tableNames) {
-            // Attend la résolution de chaque promesse individuellement pour identifier l'erreur exacte
-            data[tableName] = await fetchTableWithErrorLogging(tableName);
+            const { data: rows, error } = await supabase.from(tableName).select('*');
+            if (error) {
+                errors.push(tableName);
+                data[tableName] = [];
+            } else {
+                data[tableName] = rows || [];
+            }
+        }
+
+        if (errors.length > 0) {
+            console.warn('Supabase: certaines tables sont indisponibles:', errors.join(', '));
         }
 
         return {
