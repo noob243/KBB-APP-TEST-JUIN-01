@@ -7,6 +7,11 @@
 # Environment variables
 .env*
 
+# Android local SDK path (user-specific)
+/android/local.properties
+# Capacitor generated build file (regenerated on each sync)
+/android/app/capacitor.build.gradle
+
 # Log files
 *.log
 npm-debug.log*
