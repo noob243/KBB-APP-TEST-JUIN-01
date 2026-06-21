@@ -901,7 +901,7 @@ function App() {
                 defaultSubject={emailConfig.subject}
                 defaultBody={emailConfig.body}
                 recipientName={emailConfig.recipientName}
-                attachmentName={email.attachmentName}
+                attachmentName={emailConfig.attachmentName}
             />
         </div>
     );
