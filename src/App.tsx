@@ -688,11 +688,6 @@ function App() {
 
     return (
         <div className="flex h-screen bg-gray-100 dark:bg-[#070b13] font-sans overflow-hidden transition-colors duration-300">
-            <div style={{ position: 'absolute', top: 0, left: 0, padding: '1rem', background: 'rgba(0,0,0,0.8)', color: 'white', zIndex: 9999 }}>
-                <h3>DEBUG PANEL</h3>
-                <p><strong>URL:</strong> {import.meta.env.VITE_SUPABASE_URL || "NOT FOUND"}</p>
-                <p><strong>ANON KEY:</strong> {import.meta.env.VITE_SUPABASE_ANON_KEY || "NOT FOUND"}</p>
-            </div>
             <Sidebar 
                 currentPage={currentPage} 
                 setCurrentPage={setCurrentPage} 
@@ -906,7 +901,7 @@ function App() {
                 defaultSubject={emailConfig.subject}
                 defaultBody={emailConfig.body}
                 recipientName={emailConfig.recipientName}
-                attachmentName={emailConfig.attachmentName}
+                attachmentName={email.attachmentName}
             />
         </div>
     );
