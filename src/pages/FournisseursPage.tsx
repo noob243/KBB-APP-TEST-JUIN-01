@@ -212,7 +212,7 @@ const FournisseursPage: FC<FournisseursPageProps> = ({ fournisseurs, onAddFourni
                                         <h3 className="text-base font-black text-gray-800 mt-1.5 leading-snug">{selectedFournisseur.nomComplet}</h3>
                                         <div className="text-xs text-gray-500 mt-1 border-t border-slate-150/50 pt-2 flex items-center justify-between gap-1 w-full">
                                             <span className="flex items-center gap-1.5 truncate">
-                                                <MailIcon className="w-3.5 h-3.5 text-indigo-550 shrink-0" />
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
                                                 {selectedFournisseur.adresseMail ? (
                                                     <a href={`mailto:${selectedFournisseur.adresseMail}`} className="text-indigo-650 hover:text-indigo-800 hover:underline transition truncate block">
                                                         {selectedFournisseur.adresseMail}

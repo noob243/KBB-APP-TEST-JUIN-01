@@ -90,11 +90,11 @@ const EventModal: FC<EventModalProps> = ({ isOpen, onClose, onSave, avocats = []
 
     // Photo profil base64 parser
     const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+        const file: File | undefined = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = (event) => {
-                if (event.target?.result) {
+                if (e.target?.result) {
                     setPhotoProfil(event.target.result as string);
                 }
             };
@@ -105,7 +105,7 @@ const EventModal: FC<EventModalProps> = ({ isOpen, onClose, onSave, avocats = []
     // Attachment base64 parser
     const handleAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            Array.from(e.target.files).forEach(file => {
+            Array.from(e.target.files).forEach((file: File) => {
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     const sizeStr = file.size > 1024 * 1024 
@@ -114,7 +114,7 @@ const EventModal: FC<EventModalProps> = ({ isOpen, onClose, onSave, avocats = []
                     setPiecesJointes(prev => [...prev, {
                         name: file.name,
                         size: sizeStr,
-                        content: reader.result as string
+                        content: String(reader.result)
                     }]);
                 };
                 reader.readAsDataURL(file);

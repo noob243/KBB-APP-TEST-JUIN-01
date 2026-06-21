@@ -36,7 +36,7 @@ function App() {
     const [activeAlarmTask, setActiveAlarmTask] = useState<Task | null>(null);
     const stopActiveAlarmRef = React.useRef<(() => void) | null>(null);
     const [isSidebarOpen, setSidebarOpen] = useState(false);
-    
+
     const [clients, setClients] = useState<Client[]>([]);
     const [cases, setCases] = useState<Case[]>([]);
     const [events, setEvents] = useState<Event[]>([]);
@@ -68,7 +68,7 @@ function App() {
         isOpen: false,
         title: '',
         message: '',
-        onConfirm: () => {}
+        onConfirm: () => { }
     });
 
     const [emailConfig, setEmailConfig] = useState<{
@@ -177,16 +177,16 @@ function App() {
                 if (!t.reminderEnabled || t.reminderTriggered || t.status === 'Effectué') {
                     return false;
                 }
-                
-                const scheduledDate = t.reminderDate || '';
-                const scheduledTime = t.reminderTime || '';
 
-                if (!scheduledDate || !scheduledTime) return false;
+                const scheduledDate = t.reminderDate || '';
+                const scheduledTimeStr = t.reminderTime || '';
+
+                if (!scheduledDate || !scheduledTimeStr) return false;
 
                 if (scheduledDate < currentLocalDateString) {
                     return true; // Missed from before
                 } else if (scheduledDate === currentLocalDateString) {
-                    return scheduledTime <= currentLocalTimeString; // Today, at or after the scheduled time
+                    return scheduledTimeStr <= currentLocalTimeString; // Today, at or after the scheduled time
                 }
 
                 return false;
@@ -194,7 +194,7 @@ function App() {
 
             if (pendingReminder) {
                 setActiveAlarmTask(pendingReminder);
-                
+
                 const soundType = pendingReminder.reminderSound || 'digital';
                 const stopSoundFn = playAlarmSound(soundType, 0.7);
                 stopActiveAlarmRef.current = stopSoundFn;
@@ -202,11 +202,11 @@ function App() {
                 if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
                     try {
                         const notif = new Notification(`Rappel de Tâche: ${pendingReminder.name}`, {
-                            body: `Échéance / Rendez-vous à ${scheduledTime || 'l\'instant'}\nResponsable: ${pendingReminder.lawyer}`,
+                            body: `Échéance / Rendez-vous à ${pendingReminder.reminderTime || "l'instant"}\nResponsable: ${pendingReminder.lawyer}`,
                             icon: '/favicon.ico',
                             requireInteraction: true
                         });
-                        
+
                         notif.onclick = () => {
                             window.focus();
                             notif.close();
@@ -284,7 +284,7 @@ function App() {
         setIsAuthenticated(false);
         setCurrentPage('Dashboard');
     };
-    
+
     const handleExportPDF = (title: string, headers: string[], data: any[][]) => {
         const { jsPDF } = jspdf;
         const doc = new jsPDF();
@@ -383,7 +383,7 @@ function App() {
         try {
             await supabaseService.addInvoice(newInvoice);
             await fetchData(); // Refresh data
-            triggerToast('success', `Facture "${newInvoice.id}" émise !`);
+            triggerToast('success', `Facture "${(newInvoice as any).id || newInvoice.caseId}" émise !`);
         } catch (err) {
             triggerToast('error', "Échec de l'émission.");
         }
@@ -419,10 +419,10 @@ function App() {
         }
     };
 
-    const executeDeleteClient = async (id: number) => {
+    const executeDeleteClient = async (id: number | string) => {
         const client = clients.find(c => c.id === id);
         try {
-            await supabaseService.deleteClient(id);
+            await supabaseService.deleteClient(id as number);
             await fetchData(); // Refresh data
             triggerToast('success', `Client "${client?.name || id}" révoqué !`);
         } catch (err) {
@@ -594,7 +594,7 @@ function App() {
 
     const handleUpdateClient = async (updated: Client) => {
         try {
-            await supabaseService.updateClient(updated.id, updated);
+            await supabaseService.updateClient(updated.id as number, updated);
             await fetchData(); // Refresh data
             triggerToast('success', `Client "${updated.name}" sauvegardé !`);
         } catch (err) {
@@ -632,28 +632,28 @@ function App() {
         }
     };
 
-    const filteredClients = clients.filter(c => 
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const filteredClients = clients.filter(c =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.contact.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const filteredCases = cases.filter(c => 
-        c.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const filteredCases = cases.filter(c =>
+        c.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.client.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const filteredEvents = events.filter(e => 
-        e.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        e.type.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const filteredEvents = events.filter(e =>
+        e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        e.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
         e.lieu.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const renderPage = () => {
         const pageProps = {
-            clients: filteredClients, 
-            cases: filteredCases, 
-            events: filteredEvents, 
+            clients: filteredClients,
+            cases: filteredCases,
+            events: filteredEvents,
             tasks, invoices, avocats, lawyerNames, personnels, fournisseurs,
             onAddClient: handleAddClient, onAddCase: handleAddCase, onAddEvent: handleAddEvent,
             onAddTask: handleAddTask, onAddInvoice: handleAddInvoice, onAddAvocat: handleAddAvocat, onAddPersonnel: handleAddPersonnel, onAddFournisseur: handleAddFournisseur,
@@ -689,21 +689,21 @@ function App() {
 
     return (
         <div className="flex h-screen bg-gray-100 dark:bg-[#070b13] font-sans overflow-hidden transition-colors duration-300">
-            <Sidebar 
-                currentPage={currentPage} 
-                setCurrentPage={setCurrentPage} 
-                onLogout={handleLogout} 
+            <Sidebar
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+                onLogout={handleLogout}
                 isSidebarOpen={isSidebarOpen}
                 toggleSidebar={() => setSidebarOpen(!isSidebarOpen)}
             />
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <Header 
-                    searchQuery={searchQuery} 
-                    setSearchQuery={setSearchQuery} 
-                    clients={clients} 
-                    cases={cases} 
-                    events={events} 
-                    setCurrentPage={setCurrentPage} 
+                <Header
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    clients={clients}
+                    cases={cases}
+                    events={events}
+                    setCurrentPage={setCurrentPage}
                     isDarkMode={isDarkMode}
                     setIsDarkMode={setIsDarkMode}
                     toggleSidebar={() => setSidebarOpen(!isSidebarOpen)}
@@ -713,7 +713,7 @@ function App() {
                 </main>
             </div>
 
-                <BottomNavBar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />
+            <BottomNavBar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />
 
             <div className="fixed bottom-5 right-5 space-y-3 z-50 pointer-events-none">
                 <AnimatePresence>
@@ -739,15 +739,13 @@ function App() {
                                 initial={{ opacity: 0, y: 50, scale: 0.9 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.25 } }}
-                                className={`p-4 rounded-2xl shadow-2xl pointer-events-auto flex items-start space-x-3 text-white max-w-sm border backdrop-blur-md ${
-                                    toast.type === 'success' 
-                                        ? 'bg-slate-900/95 border-emerald-500/50 text-emerald-550' 
+                                className={`p-4 rounded-2xl shadow-2xl pointer-events-auto flex items-start space-x-3 text-white max-w-sm border backdrop-blur-md ${toast.type === 'success'
+                                        ? 'bg-slate-900/95 border-emerald-500/50 text-emerald-550'
                                         : 'bg-slate-900/95 border-rose-500/50 text-rose-550'
-                                }`}
+                                    }`}
                             >
-                                <span className={`flex-shrink-0 text-lg flex items-center justify-center p-2 rounded-xl ${
-                                    toast.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
-                                }`}>
+                                <span className={`flex-shrink-0 text-lg flex items-center justify-center p-2 rounded-xl ${toast.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
+                                    }`}>
                                     {toast.type === 'success' ? (
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -759,9 +757,8 @@ function App() {
                                     )}
                                 </span>
                                 <div className="space-y-0.5">
-                                    <h4 className={`text-xs font-black tracking-wide ${
-                                        toast.type === 'success' ? 'text-emerald-400' : 'text-rose-400'
-                                    }`}>
+                                    <h4 className={`text-xs font-black tracking-wide ${toast.type === 'success' ? 'text-emerald-400' : 'text-rose-400'
+                                        }`}>
                                         {title}
                                     </h4>
                                     <p className="text-[11px] font-medium text-slate-300 leading-normal">
@@ -784,7 +781,7 @@ function App() {
                             onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
                             className="absolute inset-0 bg-slate-900/60 backdrop-blur-md cursor-pointer"
                         />
-                        
+
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -833,14 +830,14 @@ function App() {
             <AnimatePresence>
                 {activeAlarmTask && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
-                        <motion.div 
+                        <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
                             className="bg-white rounded-3xl shadow-2xl p-6 max-w-md w-full border border-red-100 overflow-hidden text-center relative"
                         >
                             <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-500 via-orange-500 to-red-500" />
-                            
+
                             <div className="my-6 relative flex justify-center">
                                 <span className="absolute inline-flex h-20 w-20 rounded-full bg-red-100 opacity-75 animate-ping" />
                                 <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-red-500 text-white shadow-lg shadow-red-500/30">
@@ -894,8 +891,8 @@ function App() {
                     </div>
                 )}
             </AnimatePresence>
-            
-            <EmailComposerModal 
+
+            <EmailComposerModal
                 isOpen={emailConfig.isOpen}
                 onClose={() => setEmailConfig(prev => ({ ...prev, isOpen: false }))}
                 defaultTo={emailConfig.to}

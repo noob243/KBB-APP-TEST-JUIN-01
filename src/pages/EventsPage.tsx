@@ -54,7 +54,7 @@ const EventsPage: FC<EventsPageProps> = ({ events, onAddEvent, onUpdateEvent, av
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            Array.from(e.target.files).forEach(file => {
+            Array.from(e.target.files).forEach((file: File) => {
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     const sizeStr = file.size > 1024 * 1024 
@@ -63,7 +63,7 @@ const EventsPage: FC<EventsPageProps> = ({ events, onAddEvent, onUpdateEvent, av
                     setReportFiles(prev => [...prev, {
                         name: file.name,
                         size: sizeStr,
-                        content: reader.result as string
+                        content: String(reader.result)
                     }]);
                 };
                 reader.readAsDataURL(file);
@@ -84,7 +84,7 @@ const EventsPage: FC<EventsPageProps> = ({ events, onAddEvent, onUpdateEvent, av
         e.preventDefault();
         setIsDragOver(false);
         if (e.dataTransfer.files) {
-            Array.from(e.dataTransfer.files).forEach(file => {
+            Array.from(e.dataTransfer.files).forEach((file: File) => {
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     const sizeStr = file.size > 1024 * 1024 
@@ -93,7 +93,7 @@ const EventsPage: FC<EventsPageProps> = ({ events, onAddEvent, onUpdateEvent, av
                     setReportFiles(prev => [...prev, {
                         name: file.name,
                         size: sizeStr,
-                        content: reader.result as string
+                        content: String(reader.result)
                     }]);
                 };
                 reader.readAsDataURL(file);
@@ -232,7 +232,7 @@ const EventsPage: FC<EventsPageProps> = ({ events, onAddEvent, onUpdateEvent, av
                                         ) : (
                                             <span className="flex items-center gap-1">
                                                 <CalendarIcon className="w-3.5 h-3.5 text-indigo-600" />
-                                                <span>{new Date(event.date || today).toLocaleDateString('fr-FR')}</span>
+                                                <span>{new Date(event.date || new Date().toISOString().split('T')[0]).toLocaleDateString('fr-FR')}</span>
                                             </span>
                                         )}
                                     </td>

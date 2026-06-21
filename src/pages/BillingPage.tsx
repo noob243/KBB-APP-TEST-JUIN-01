@@ -8,7 +8,7 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import { Eye, Mail } from 'lucide-react';
 
 // Custom Tooltip Component for Recharts v3
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
   if (active && payload && payload.length) {
     return (
       <div style={{ 
@@ -19,7 +19,7 @@ const CustomTooltip = ({ active, payload, label }) => {
           padding: '10px'
       }}>
         <p style={{ color: '#94a3b8', fontSize: '9px', fontWeight: 'bold', marginBottom: '4px' }}>{label}</p>
-        {payload.map((pld, index) => (
+        {payload.map((pld: any, index: number) => (
           <p key={index} style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold' }}>
             {`${pld.name}: ${pld.value} €`}
           </p>

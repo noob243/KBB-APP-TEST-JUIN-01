@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Dispatch, SetStateAction } from 'react';
 
-export function usePersistentState<T>(key: string, initialState: T): [T, React.Dispatch<React.SetStateAction<T>>] {
+export function usePersistentState<T>(key: string, initialState: T): [T, Dispatch<SetStateAction<T>>] {
     const [state, setState] = useState<T>(() => {
         try {
             const storageValue = window.localStorage.getItem(key);

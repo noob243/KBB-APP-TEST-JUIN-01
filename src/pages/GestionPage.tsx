@@ -6,7 +6,7 @@ import { DetailedEditModal } from '../components/DetailedEditModal';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 // Custom Tooltip Component for Recharts v3
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
   if (active && payload && payload.length) {
     return (
       <div style={{ 
@@ -19,7 +19,7 @@ const CustomTooltip = ({ active, payload, label }) => {
           padding: '10px' // Added padding
       }}>
         <p style={{ color: '#0f172a', fontWeight: '800' }}>{label}</p>
-        {payload.map((pld, index) => (
+        {payload.map((pld: any, index: number) => (
           <p key={index}>
             {`${pld.name}: ${pld.value}`}
           </p>
