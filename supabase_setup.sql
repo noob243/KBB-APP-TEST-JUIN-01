@@ -13,7 +13,6 @@ DROP TABLE IF EXISTS invoices CASCADE;
 DROP TABLE IF EXISTS tasks CASCADE;
 DROP TABLE IF EXISTS bank_accounts CASCADE;
 DROP TABLE IF EXISTS personnel CASCADE;
-DROP TABLE IF EXISTS personnels CASCADE;
 DROP TABLE IF EXISTS avocats CASCADE;
 DROP TABLE IF EXISTS event_reports CASCADE;
 DROP TABLE IF EXISTS events CASCADE;
@@ -150,10 +149,9 @@ CREATE TABLE avocats (
 );
 
 -- -----------------------------------------------------
--- 7. Table PERSONNELS (Agents administratifs)
--- Note: le pluriel "personnels" est utilisé car c'est le nom attendu par le code TypeScript (supabaseService.ts)
+-- 7. Table PERSONNEL (Agents administratifs)
 -- -----------------------------------------------------
-CREATE TABLE personnels (
+CREATE TABLE personnel (
     id VARCHAR(100) PRIMARY KEY,
     full_name VARCHAR(255) NOT NULL,
     role VARCHAR(100) NOT NULL,
@@ -172,7 +170,7 @@ CREATE TABLE personnels (
 );
 
 -- -----------------------------------------------------
--- 8. Table BANK_ACCOUNTS (Comptes bancaires des avocats et personnels)
+-- 8. Table BANK_ACCOUNTS (Comptes bancaires des avocats et personnel)
 -- -----------------------------------------------------
 CREATE TABLE bank_accounts (
     id SERIAL PRIMARY KEY,
@@ -258,7 +256,7 @@ ALTER TABLE case_procedures ENABLE ROW LEVEL SECURITY;
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE event_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE avocats ENABLE ROW LEVEL SECURITY;
-ALTER TABLE personnels ENABLE ROW LEVEL SECURITY;
+ALTER TABLE personnel ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bank_accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
@@ -273,7 +271,7 @@ CREATE POLICY "Full access to authenticated users" ON case_procedures FOR ALL TO
 CREATE POLICY "Full access to authenticated users" ON events FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Full access to authenticated users" ON event_reports FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Full access to authenticated users" ON avocats FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Full access to authenticated users" ON personnels FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Full access to authenticated users" ON personnel FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Full access to authenticated users" ON bank_accounts FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Full access to authenticated users" ON tasks FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Full access to authenticated users" ON invoices FOR ALL TO authenticated USING (true) WITH CHECK (true);
@@ -324,7 +322,7 @@ INSERT INTO invoices (id, case_id, due_date, total_amount, paid_amount, status, 
 ('FACT-CI002-01', 'CI-2023-002', '2024-10-20', 1200.00, 0.00, 'Non réglée', 'Rédaction Contrat de Travail');
 
 -- Personnel
-INSERT INTO personnels (id, full_name, role, email, phone, service_start_date, service_status, salary, marital_status, has_children, children_count, address, photo, disciplinary_measure, disciplinary_status) VALUES
+INSERT INTO personnel (id, full_name, role, email, phone, service_start_date, service_status, salary, marital_status, has_children, children_count, address, photo, disciplinary_measure, disciplinary_status) VALUES
 ('PERS-01', 'Félicité Kanku', 'Secrétaire', 'f.kanku@cabinet.com', '0815551234', '2021-03-15', 'Actif', 850.00, 'Marié(e)', 'Oui', 2, 'Av. de la Gombe 12, Kinshasa/Gombe', '', 'Aucune', 'Aucune'),
 ('PERS-02', 'Didier Mbenga', 'Assistant de direction', 'd.mbenga@cabinet.com', '0815555678', '2019-11-01', 'Actif', 1200.00, 'Célibataire', 'Non', 0, 'Bld du 30 Juin 45, Kinshasa/Gombe', '', 'Aucune', 'Aucune'),
 ('PERS-03', 'Arsène Lupungu', 'Intendant', 'a.lupungu@cabinet.com', '0815559012', '2023-05-10', 'Actif', 600.00, 'Célibataire', 'Non', 0, 'Av. Kisangani 104, Kinshasa/Lingwala', '', 'Avertissement écrit pour retards injustifiés', 'En cours');
@@ -347,4 +345,4 @@ SELECT setval('clients_id_seq', COALESCE((SELECT MAX(id)+1 FROM clients), 1), fa
 SELECT setval('tasks_id_seq', COALESCE((SELECT MAX(id)+1 FROM tasks), 1), false);
 SELECT setval('referents_id_seq', COALESCE((SELECT MAX(id)+1 FROM referents), 1), false);
 SELECT setval('bank_accounts_id_seq', COALESCE((SELECT MAX(id)+1 FROM bank_accounts), 1), false);
-SELECT setval('personnels_id_seq', COALESCE((SELECT MAX(id)+1 FROM personnels), 1), false);
+SELECT setval('personnel_id_seq', COALESCE((SELECT MAX(id)+1 FROM personnel), 1), false);

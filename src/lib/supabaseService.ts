@@ -12,7 +12,7 @@ const fetchTableWithErrorLogging = async (tableName: string) => {
 
 export const supabaseService = {
     fetchAllData: async () => {
-        const tableNames = ['clients', 'cases', 'events', 'tasks', 'invoices', 'avocats', 'personnels', 'fournisseurs'];
+        const tableNames = ['clients', 'cases', 'events', 'tasks', 'invoices', 'avocats', 'personnel', 'fournisseurs'];
         const data: { [key: string]: any[] } = {};
 
         for (const tableName of tableNames) {
@@ -27,7 +27,7 @@ export const supabaseService = {
             tasks: data.tasks,
             invoices: data.invoices,
             avocats: data.avocats,
-            personnels: data.personnels,
+            personnels: data.personnel,
             fournisseurs: data.fournisseurs,
         };
     },
@@ -57,9 +57,9 @@ export const supabaseService = {
     updateAvocat: (id: string, updates: any) => supabase.from('avocats').update(updates).eq('id', id),
     deleteAvocat: (id: string) => supabase.from('avocats').delete().eq('id', id),
 
-    addPersonnel: (personnel: any) => supabase.from('personnels').insert([personnel]),
-    updatePersonnel: (id: string, updates: any) => supabase.from('personnels').update(updates).eq('id', id),
-    deletePersonnel: (id: string) => supabase.from('personnels').delete().eq('id', id),
+    addPersonnel: (personnel: any) => supabase.from('personnel').insert([personnel]),
+    updatePersonnel: (id: string, updates: any) => supabase.from('personnel').update(updates).eq('id', id),
+    deletePersonnel: (id: string) => supabase.from('personnel').delete().eq('id', id),
 
     addFournisseur: (fournisseur: any) => supabase.from('fournisseurs').insert([fournisseur]),
     updateFournisseur: (id: string, updates: any) => supabase.from('fournisseurs').update(updates).eq('id', id),
