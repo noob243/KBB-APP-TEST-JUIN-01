@@ -24,7 +24,7 @@ import { playAlarmSound, stopAllAlarmSounds } from './utils/audio';
 
 // Supabase core configuration
 import { supabase } from './supabaseClient';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import EmailComposerModal from './components/modals/EmailComposerModal';
 
 declare const jspdf: any;
