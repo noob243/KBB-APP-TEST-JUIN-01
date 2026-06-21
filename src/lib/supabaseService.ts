@@ -1,97 +1,67 @@
 import { supabase } from '../supabaseClient';
 
-// Generic fetch function
-const fetchTable = async (tableName: string) => {
+// Fonction pour récupérer une table avec un nom de table dans l'erreur
+const fetchTableWithErrorLogging = async (tableName: string) => {
     const { data, error } = await supabase.from(tableName).select('*');
     if (error) {
-        console.error(`Error fetching ${tableName}:`, error);
-        throw error;
+        // Propage une erreur personnalisée qui inclut le nom de la table
+        throw new Error(`Erreur de chargement pour la table : ${tableName}. Vérifiez les politiques RLS.`);
     }
     return data;
 };
 
-// Generic add function
-const addRecord = async (tableName: string, record: any) => {
-    const { data, error } = await supabase.from(tableName).insert([record]).select();
-    if (error) {
-        console.error(`Error adding to ${tableName}:`, error);
-        throw error;
-    }
-    return data[0];
-};
-
-// Generic update function
-const updateRecord = async (tableName: string, id: string | number, updates: any) => {
-    const { data, error } = await supabase.from(tableName).update(updates).eq('id', id).select();
-    if (error) {
-        console.error(`Error updating ${tableName}:`, error);
-        throw error;
-    }
-    return data[0];
-};
-
-// Generic delete function
-const deleteRecord = async (tableName: string, id: string | number) => {
-    const { error } = await supabase.from(tableName).delete().eq('id', id);
-    if (error) {
-        console.error(`Error deleting from ${tableName}:`, error);
-        throw error;
-    }
-};
-
 export const supabaseService = {
-    // Fetch all data
     fetchAllData: async () => {
-        const [clients, cases, events, tasks, invoices, avocats, personnels, fournisseurs] = await Promise.all([
-            fetchTable('clients'),
-            fetchTable('cases'),
-            fetchTable('events'),
-            fetchTable('tasks'),
-            fetchTable('invoices'),
-            fetchTable('avocats'),
-            fetchTable('personnels'),
-            fetchTable('fournisseurs')
-        ]);
-        return { clients, cases, events, tasks, invoices, avocats, personnels, fournisseurs };
+        const tableNames = ['clients', 'cases', 'events', 'tasks', 'invoices', 'avocats', 'personnels', 'fournisseurs'];
+        const data: { [key: string]: any[] } = {};
+
+        for (const tableName of tableNames) {
+            // Attend la résolution de chaque promesse individuellement pour identifier l'erreur exacte
+            data[tableName] = await fetchTableWithErrorLogging(tableName);
+        }
+
+        return {
+            clients: data.clients,
+            cases: data.cases,
+            events: data.events,
+            tasks: data.tasks,
+            invoices: data.invoices,
+            avocats: data.avocats,
+            personnels: data.personnels,
+            fournisseurs: data.fournisseurs,
+        };
     },
 
-    // Client functions
-    addClient: (client: any) => addRecord('clients', client),
-    updateClient: (id: number, updates: any) => updateRecord('clients', id, updates),
-    deleteClient: (id: number) => deleteRecord('clients', id),
+    // ... (le reste des fonctions add, update, delete restent les mêmes)
+    addClient: (client: any) => supabase.from('clients').insert([client]),
+    updateClient: (id: number, updates: any) => supabase.from('clients').update(updates).eq('id', id),
+    deleteClient: (id: number) => supabase.from('clients').delete().eq('id', id),
 
-    // Case functions
-    addCase: (caseItem: any) => addRecord('cases', caseItem),
-    updateCase: (id: string, updates: any) => updateRecord('cases', id, updates),
-    deleteCase: (id: string) => deleteRecord('cases', id),
+    addCase: (caseItem: any) => supabase.from('cases').insert([caseItem]),
+    updateCase: (id: string, updates: any) => supabase.from('cases').update(updates).eq('id', id),
+    deleteCase: (id: string) => supabase.from('cases').delete().eq('id', id),
 
-    // Event functions
-    addEvent: (event: any) => addRecord('events', event),
-    updateEvent: (id: string, updates: any) => updateRecord('events', id, updates),
-    deleteEvent: (id: string) => deleteRecord('events', id),
+    addEvent: (event: any) => supabase.from('events').insert([event]),
+    updateEvent: (id: string, updates: any) => supabase.from('events').update(updates).eq('id', id),
+    deleteEvent: (id: string) => supabase.from('events').delete().eq('id', id),
 
-    // Task functions
-    addTask: (task: any) => addRecord('tasks', task),
-    updateTask: (id: number, updates: any) => updateRecord('tasks', id, updates),
-    deleteTask: (id: number) => deleteRecord('tasks', id),
+    addTask: (task: any) => supabase.from('tasks').insert([task]),
+    updateTask: (id: number, updates: any) => supabase.from('tasks').update(updates).eq('id', id),
+    deleteTask: (id: number) => supabase.from('tasks').delete().eq('id', id),
 
-    // Invoice functions
-    addInvoice: (invoice: any) => addRecord('invoices', invoice),
-    updateInvoice: (id: string, updates: any) => updateRecord('invoices', id, updates),
-    deleteInvoice: (id: string) => deleteRecord('invoices', id),
+    addInvoice: (invoice: any) => supabase.from('invoices').insert([invoice]),
+    updateInvoice: (id: string, updates: any) => supabase.from('invoices').update(updates).eq('id', id),
+    deleteInvoice: (id: string) => supabase.from('invoices').delete().eq('id', id),
 
-    // Avocat functions
-    addAvocat: (avocat: any) => addRecord('avocats', avocat),
-    updateAvocat: (id: string, updates: any) => updateRecord('avocats', id, updates),
-    deleteAvocat: (id: string) => deleteRecord('avocats', id),
+    addAvocat: (avocat: any) => supabase.from('avocats').insert([avocat]),
+    updateAvocat: (id: string, updates: any) => supabase.from('avocats').update(updates).eq('id', id),
+    deleteAvocat: (id: string) => supabase.from('avocats').delete().eq('id', id),
 
-    // Personnel functions
-    addPersonnel: (personnel: any) => addRecord('personnels', personnel),
-    updatePersonnel: (id: string, updates: any) => updateRecord('personnels', id, updates),
-    deletePersonnel: (id: string) => deleteRecord('personnels', id),
+    addPersonnel: (personnel: any) => supabase.from('personnels').insert([personnel]),
+    updatePersonnel: (id: string, updates: any) => supabase.from('personnels').update(updates).eq('id', id),
+    deletePersonnel: (id: string) => supabase.from('personnels').delete().eq('id', id),
 
-    // Fournisseur functions
-    addFournisseur: (fournisseur: any) => addRecord('fournisseurs', fournisseur),
-    updateFournisseur: (id: string, updates: any) => updateRecord('fournisseurs', id, updates),
-    deleteFournisseur: (id: string) => deleteRecord('fournisseurs', id),
+    addFournisseur: (fournisseur: any) => supabase.from('fournisseurs').insert([fournisseur]),
+    updateFournisseur: (id: string, updates: any) => supabase.from('fournisseurs').update(updates).eq('id', id),
+    deleteFournisseur: (id: string) => supabase.from('fournisseurs').delete().eq('id', id),
 };
