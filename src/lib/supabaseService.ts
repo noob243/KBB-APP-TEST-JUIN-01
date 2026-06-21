@@ -21,14 +21,14 @@ export const supabaseService = {
         }
 
         return {
-            clients: data.clients,
-            cases: data.cases,
-            events: data.events,
-            tasks: data.tasks,
-            invoices: data.invoices,
-            avocats: data.avocats,
-            personnels: data.personnel,
-            fournisseurs: data.fournisseurs,
+            clients: data.clients || [],
+            cases: data.cases || [],
+            events: data.events || [],
+            tasks: data.tasks || [],
+            invoices: data.invoices || [],
+            avocats: data.avocats || [],
+            personnels: data.personnel || [],
+            fournisseurs: data.fournisseurs || [],
         };
     },
 
